@@ -1,4 +1,4 @@
-package file
+package folders
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"github.com/influxdata/telegraf/plugins/parsers"
 )
 
-type File struct {
+type Folders struct {
 	Files  []string `toml:"files"`
 	parser parsers.Parser
 
