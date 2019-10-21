@@ -10,15 +10,17 @@ import (
 	"github.com/influxdata/telegraf/plugins/parsers"
 )
 
-type Folders struct {
-	Files  []string `toml:"files"`
+type Folder struct {
+	Folders []string `toml:"folders"`
 	parser parsers.Parser
 
+    foldernames []string
 	filenames []string
+    files []string
 }
 
 const sampleConfig = `
-  ## Files to parse each interval.
+  ## Folders to parse each interval.
   ## These accept standard unix glob matching rules, but with the addition of
   ## ** as a "super asterisk". ie:
   ##   /var/log/**.log     -> recursively find all .log files in /var/log
@@ -34,16 +36,17 @@ const sampleConfig = `
 `
 
 // SampleConfig returns the default configuration of the Input
-func (f *File) SampleConfig() string {
+func (f *Folder) SampleConfig() string {
 	return sampleConfig
 }
 
-func (f *File) Description() string {
+func (f *Folder) Description() string {
 	return "Reload and gather from file[s] on telegraf's interval."
 }
 
-func (f *File) Gather(acc telegraf.Accumulator) error {
-	err := f.refreshFilePaths()
+func (f *Folder) Gather(acc telegraf.Accumulator) error {
+	err := f.refreshFolderPaths()
+    err := f.refreshFilePaths()
 	if err != nil {
 		return err
 	}
@@ -60,29 +63,50 @@ func (f *File) Gather(acc telegraf.Accumulator) error {
 	return nil
 }
 
-func (f *File) SetParser(p parsers.Parser) {
+func (f *Folder) SetParser(p parsers.Parser) {
 	f.parser = p
 }
 
-func (f *File) refreshFilePaths() error {
-	var allFiles []string
-	for _, file := range f.Files {
-		g, err := globpath.Compile(file)
+func (f *Folder) refreshFilePaths() error {
+    var all_files []string
+    for _, folder_name := range f.foldernames {
+        files, err := ioutil.ReadDir(folder_name)
+        if err != nil {
+            return fmt.Errorf("cannot read folder %v: %v", folder_name, err)
+        }
+        for _, file_info := range files {
+            file_path := fmt.Sprintf("%s%s",folder_name, file_info.Name())
+            g, err := globpath.Compile(file_path)
+            files := g.Match()
+            if err != nil {
+                return fmt.Errorf("could not compile glob %v: %v", file_path, err)
+            }
+            all_files = append(all_files, files...)
+        }
+    }
+    f.filenames = all_files
+}
+
+
+func (f *Folder) refreshFolderPaths() error {
+	var all_folders []string
+	for _, folder := range f.Folders {
+		g, err := globpath.Compile(folder)
 		if err != nil {
-			return fmt.Errorf("could not compile glob %v: %v", file, err)
+			return fmt.Errorf("could not compile glob %v: %v", folder, err)
 		}
-		files := g.Match()
-		if len(files) <= 0 {
-			return fmt.Errorf("could not find file: %v", file)
+		folders := g.Match()
+		if len(folders) <= 0 {
+			return fmt.Errorf("could not find folder: %v", folder)
 		}
-		allFiles = append(allFiles, files...)
+		all_folders = append(all_folders, folders...)
 	}
 
-	f.filenames = allFiles
+	f.foldernames = all_folders
 	return nil
 }
 
-func (f *File) readMetric(filename string) ([]telegraf.Metric, error) {
+func (f *Folder) readMetric(filename string) ([]telegraf.Metric, error) {
 	fileContents, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("E! Error file: %v could not be read, %s", filename, err)
@@ -92,7 +116,7 @@ func (f *File) readMetric(filename string) ([]telegraf.Metric, error) {
 }
 
 func init() {
-	inputs.Add("file", func() telegraf.Input {
-		return &File{}
+	inputs.Add("folder", func() telegraf.Input {
+		return &Folder{}
 	})
 }
