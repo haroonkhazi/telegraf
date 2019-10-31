@@ -21,14 +21,13 @@ type Folder struct {
 
 const sampleConfig = `
   ## Folders to parse each interval.
-  ## These accept standard unix glob matching rules, but with the addition of
-  ## ** as a "super asterisk". ie:
-  ##   /var/log/**.log     -> recursively find all .log files in /var/log
-  ##   /var/log/*/*.log    -> find all .log files with a parent dir in /var/log
-  ##   /var/log/apache.log -> only read the apache log file
-  files = ["/var/log/apache/access.log"]
+  ## Given a folder[s] this plugin will go through the folder[s] and 
+  ## Parse through the files within
+  folders = ["/var/log/apache/"]
 
-  ## The dataformat to be read from files
+  ## The dataformat to be read from files inside the folders
+  ## The dataformat is applied to every file inside the folder
+  ## This may cause issues as mixed formats inside the folder will cause parsing errors
   ## Each data format has its own unique set of configuration options, read
   ## more about them here:
   ## https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md
