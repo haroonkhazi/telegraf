@@ -13,13 +13,23 @@ import (
 
 func TestRefreshFilePaths(t *testing.T) {
 	wd, err := os.Getwd()
-	r := File{
-		Files: []string{filepath.Join(wd, "dev/testfiles/**.log")},
+	r := Folder{
+		foldernames: []string{filepath.Join(wd, "dev/testfiles")},
 	}
 
 	err = r.refreshFilePaths()
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(r.filenames))
+}
+
+func TestRefreshFolderPaths( t *testing.T) {
+    wd, err := os.Getwd()
+    r :=  Folder{
+        Folders: []string{filepath.Join(wd, "dev/testfiles")},
+    }
+    err = r.refreshFolderPaths()
+    require.NoError(t, err)
+    assert.Equal(t, 1, len(r.foldernames))
 }
 func TestJSONParserCompile(t *testing.T) {
 	var acc testutil.Accumulator
