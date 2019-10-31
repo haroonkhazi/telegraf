@@ -1,4 +1,4 @@
-package folders
+package folder
 
 import (
 	"fmt"
@@ -46,7 +46,10 @@ func (f *Folder) Description() string {
 
 func (f *Folder) Gather(acc telegraf.Accumulator) error {
 	err := f.refreshFolderPaths()
-    err := f.refreshFilePaths()
+    if err != nil {
+		return err
+	}
+    err = f.refreshFilePaths()
 	if err != nil {
 		return err
 	}
@@ -85,6 +88,7 @@ func (f *Folder) refreshFilePaths() error {
         }
     }
     f.filenames = all_files
+    return nil
 }
 
 
